@@ -33,7 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    apiFetch<AuthResponse>("/bff/auth/me")
+    apiFetch<AuthResponse>("/bff/auth/me", { skipAuthRedirect: true })
       .then(setUser)
       .catch(() => setUser(null))
       .finally(() => setLoading(false));

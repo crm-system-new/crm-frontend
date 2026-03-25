@@ -1,15 +1,27 @@
-const BFF_URL = process.env.NEXT_PUBLIC_BFF_URL || "http://localhost:8085";
+// No hardcoded URL — requests go to same origin, Next.js rewrites proxy them to BFF
+export async function apiFetch<T>(
+  path: string,
+  options?: RequestInit & { skipAuthRedirect?: boolean }
+): Promise<T> {
+  const { skipAuthRedirect, ...fetchOptions } = options || {};
 
-export async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${BFF_URL}${path}`, {
-    ...options,
+  const res = await fetch(path, {
+    ...fetchOptions,
     credentials: "include",
-    headers: { "Content-Type": "application/json", ...options?.headers },
+    headers: { "Content-Type": "application/json", ...fetchOptions?.headers },
   });
-  if (res.status === 401) {
-    if (typeof window !== "undefined") window.location.href = "/login";
+
+  if (res.status === 401 && !skipAuthRedirect) {
+    if (
+      typeof window !== "undefined" &&
+      !window.location.pathname.startsWith("/login") &&
+      !window.location.pathname.startsWith("/register")
+    ) {
+      window.location.href = "/login";
+    }
     throw new Error("Unauthorized");
   }
+
   if (!res.ok) {
     const text = await res.text();
     throw new Error(text || res.statusText);
